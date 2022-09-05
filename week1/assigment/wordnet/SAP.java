@@ -1,20 +1,17 @@
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-
 import edu.princeton.cs.algs4.BreadthFirstDirectedPaths;
 import edu.princeton.cs.algs4.Digraph;
 import edu.princeton.cs.algs4.In;
-import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 
 public class SAP {
-  private class returnPair {
-    private int length, ancestor;
+  private class Pair {
+    final private int length, ancestor;
 
-    returnPair(int l, int a) {
-      length = l;
-      ancestor = a;
+    Pair(int len, int ans) {
+      length = len;
+      ancestor = ans;
     }
 
     public int getLength() {
@@ -24,7 +21,7 @@ public class SAP {
   }
 
   private final Digraph graph;
-  private HashMap<HashSet<Integer>, returnPair> cached;
+  final private HashMap<HashSet<Integer>, Pair> cached;
 
   public SAP(Digraph G) {
     if (G == null) {
@@ -46,7 +43,7 @@ public class SAP {
     if (cached.containsKey(temp)) {
       return cached.get(temp).length;
     }
-    return SAPHelper(v, w).length;
+    return sapHelper(v, w).length;
 
   }
 
@@ -62,10 +59,10 @@ public class SAP {
     if (cached.containsKey(temp)) {
       return cached.get(temp).ancestor;
     }
-    return SAPHelper(v, w).ancestor;
+    return sapHelper(v, w).ancestor;
   }
 
-  private returnPair SAPHelper(int v, int w) {
+  private Pair sapHelper(int v, int w) {
 
     BreadthFirstDirectedPaths BFSV = new BreadthFirstDirectedPaths(graph, v);
     BreadthFirstDirectedPaths BFSW = new BreadthFirstDirectedPaths(graph, w);
@@ -89,7 +86,7 @@ public class SAP {
     temp.add(v);
     temp.add(w);
 
-    returnPair rP = new returnPair(distance, ancestor);
+    Pair rP = new Pair(distance, ancestor);
     cached.put(temp, rP);
     return rP;
 
@@ -99,17 +96,17 @@ public class SAP {
     iterableNullChecker(v);
     iterableNullChecker(w);
 
-    return SAPHelperIterable(v, w).length;
+    return sapHelperIterable(v, w).length;
   }
 
   public int ancestor(Iterable<Integer> v, Iterable<Integer> w) {
     iterableNullChecker(v);
     iterableNullChecker(w);
 
-    return SAPHelperIterable(v, w).ancestor;
+    return sapHelperIterable(v, w).ancestor;
   }
 
-  private returnPair SAPHelperIterable(Iterable<Integer> v, Iterable<Integer> w) {
+  private Pair sapHelperIterable(Iterable<Integer> v, Iterable<Integer> w) {
 
     BreadthFirstDirectedPaths BFSV = new BreadthFirstDirectedPaths(graph, v);
     BreadthFirstDirectedPaths BFSW = new BreadthFirstDirectedPaths(graph, w);
@@ -129,16 +126,19 @@ public class SAP {
       ancestor = -1;
     }
 
-    returnPair rP = new returnPair(distance, ancestor);
+    Pair rP = new Pair(distance, ancestor);
     return rP;
   };
 
-  private void nullChecker(Integer o) {
-    if (o == null)
+  private void nullChecker(Integer var) {
+    if (var == null)
       throw new IllegalArgumentException("null is passed");
   }
 
   private void iterableNullChecker(Iterable<Integer> it) {
+    if (it == null)
+
+      throw new IllegalArgumentException("iterable is null");
     for (Integer integer : it) {
       if (integer == null) {
         throw new IllegalArgumentException("null is passed throw iterable");

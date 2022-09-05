@@ -3,22 +3,20 @@ import edu.princeton.cs.algs4.DirectedCycle;
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.Bag;
-import edu.princeton.cs.algs4.BST;
+// import edu.princeton.cs.algs4.Stack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Stack;
+// import java.util.Stack;
 
 public class WordNet {
   private Digraph G;
-  private HashMap<String, Bag<Integer>> map;
+  final private HashMap<String, Bag<Integer>> map;
 
-  private ArrayList<String> synList;
-  private int SynLength;
-  private SAP sap;
+  private int synLength;
+  final private SAP sap;
   // private BST<String, Integer> tree;
 
   public WordNet(String synsets, String hypernyms) {
@@ -104,15 +102,15 @@ public class WordNet {
         bag.add(id);
         map.put(string.trim(), bag);
       }
-      SynLength = id + 1;
+      synLength = id + 1;
     }
   }
 
   private void hyperCtor(String hypernyms) {
 
     In hypernymsSet = new In(hypernyms);
-    // System.out.println(SynLength);
-    G = new Digraph(SynLength);
+    // System.out.println(synLength);
+    G = new Digraph(synLength);
     while (hypernymsSet.hasNextLine()) {
       String[] hyper = hypernymsSet.readLine().split(",");
       for (int i = 1; i < hyper.length; i++) {
@@ -150,11 +148,14 @@ public class WordNet {
   public Iterable<String> nouns() {
     // java.util.Collections.sort(synList);
     // return tree.keys();
+
     return map.keySet();
   }
 
   public boolean isNoun(String word) {
-    // if (tree.get(word) == null)
+    if (word == null)
+
+      throw new IllegalArgumentException();
     if (!map.containsKey(word))
       return false;
     return true;

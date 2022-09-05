@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import edu.princeton.cs.algs4.BreadthFirstDirectedPaths;
 import edu.princeton.cs.algs4.Digraph;
@@ -8,17 +9,7 @@ import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 
 public class SAP {
-
-  class pair {
-    int v, w;
-
-    pair(int x, int y) {
-      v = x;
-      w = y;
-    }
-  }
-
-  class returnPair {
+  private class returnPair {
     private int length, ancestor;
 
     returnPair(int l, int a) {
@@ -33,9 +24,9 @@ public class SAP {
   }
 
   private final Digraph graph;
-  private HashMap<pair, returnPair> cached;
+  private HashMap<HashSet<Integer>, returnPair> cached;
 
-  SAP(Digraph G) {
+  public SAP(Digraph G) {
     if (G == null) {
       throw new IllegalArgumentException("Digraph is null");
     }
@@ -48,8 +39,13 @@ public class SAP {
     nullChecker(v);
     nullChecker(w);
 
-    if (cached.containsKey(new pair(v, w)))
-      return cached.get(new pair(v, w)).length;
+    HashSet<Integer> temp = new HashSet<>();
+    temp.add(v);
+    temp.add(w);
+
+    if (cached.containsKey(temp)) {
+      return cached.get(temp).length;
+    }
     return SAPHelper(v, w).length;
 
   }
@@ -59,11 +55,12 @@ public class SAP {
     nullChecker(v);
     nullChecker(w);
 
-    if (cached.containsKey(new pair(v, w))) {
+    HashSet<Integer> temp = new HashSet<>();
+    temp.add(v);
+    temp.add(w);
 
-      System.out.println("CACHHHHHHHED");
-
-      return cached.get(new pair(v, w)).ancestor;
+    if (cached.containsKey(temp)) {
+      return cached.get(temp).ancestor;
     }
     return SAPHelper(v, w).ancestor;
   }
@@ -83,20 +80,65 @@ public class SAP {
       }
     }
 
-    pair p = new pair(v, w);
-    returnPair rP = new returnPair(distance, ancestor);
-    cached.put(p, rP);
+    if (distance == Integer.MAX_VALUE) {
+      distance = -1;
+      ancestor = -1;
 
+    }
+    HashSet<Integer> temp = new HashSet<>();
+    temp.add(v);
+    temp.add(w);
+
+    returnPair rP = new returnPair(distance, ancestor);
+    cached.put(temp, rP);
     return rP;
 
   };
 
-  void nullChecker(Integer o) {
+  public int length(Iterable<Integer> v, Iterable<Integer> w) {
+    iterableNullChecker(v);
+    iterableNullChecker(w);
+
+    return SAPHelperIterable(v, w).length;
+  }
+
+  public int ancestor(Iterable<Integer> v, Iterable<Integer> w) {
+    iterableNullChecker(v);
+    iterableNullChecker(w);
+
+    return SAPHelperIterable(v, w).ancestor;
+  }
+
+  private returnPair SAPHelperIterable(Iterable<Integer> v, Iterable<Integer> w) {
+
+    BreadthFirstDirectedPaths BFSV = new BreadthFirstDirectedPaths(graph, v);
+    BreadthFirstDirectedPaths BFSW = new BreadthFirstDirectedPaths(graph, w);
+
+    int distance = Integer.MAX_VALUE;
+    int ancestor = 0;
+    for (int it = 0; it < graph.V(); it++) {
+      int sum = BFSV.distTo(it) + BFSW.distTo(it);
+      if (BFSV.hasPathTo(it) && BFSW.hasPathTo(it) && sum < distance) {
+        distance = sum;
+        ancestor = it;
+      }
+    }
+
+    if (distance == Integer.MAX_VALUE) {
+      distance = -1;
+      ancestor = -1;
+    }
+
+    returnPair rP = new returnPair(distance, ancestor);
+    return rP;
+  };
+
+  private void nullChecker(Integer o) {
     if (o == null)
       throw new IllegalArgumentException("null is passed");
   }
 
-  void iterableNullChecker(Iterable<Integer> it) {
+  private void iterableNullChecker(Iterable<Integer> it) {
     for (Integer integer : it) {
       if (integer == null) {
         throw new IllegalArgumentException("null is passed throw iterable");

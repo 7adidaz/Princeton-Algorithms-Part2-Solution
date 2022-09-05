@@ -1,4 +1,5 @@
 import edu.princeton.cs.algs4.Digraph;
+import edu.princeton.cs.algs4.DirectedCycle;
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.Bag;
@@ -8,10 +9,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Stack;
 
 public class WordNet {
   private Digraph G;
   private HashMap<String, Bag<Integer>> map;
+
   private ArrayList<String> synList;
   private int SynLength;
   private SAP sap;
@@ -20,11 +24,69 @@ public class WordNet {
   public WordNet(String synsets, String hypernyms) {
 
     map = new HashMap<>();
+
     synCtor(synsets);
     hyperCtor(hypernyms);
     sap = new SAP(G);
-
+    DirectedCycle c = new DirectedCycle(G);
+    if (c.hasCycle())
+      throw new IllegalArgumentException();
+    // visited = new boolean[G.V()];
+    // s = new Stack<>();
+    // tsort = new ArrayList<>();
+    // checkCycle();
   }
+
+  // private boolean[] visited;
+  // private Stack<Integer> s;
+  // private ArrayList<Integer> tsort;
+
+  // private boolean isCycle() {
+  // for (int i = 0; i < G.V(); i++) {
+  // if (visited[i] == false) {
+  // dfs(i);
+  // }
+  // }
+
+  // if (checkCycle())
+  // return true;
+  // else
+  // return false;
+  // }
+
+  // private boolean checkCycle() {
+  // Map<Integer, Integer> pos = new HashMap<>();
+  // int count = 0;
+  // while (!s.isEmpty()) {
+
+  // pos.put(s.peek(), count);
+  // tsort.add(s.peek());
+
+  // count += 1;
+  // s.pop();
+
+  // }
+
+  // for (int i = 0; i < G.V(); i++) {
+  // for (Integer it : G.adj(i)) {
+
+  // if (pos.get(i) > pos.get(it)) {
+  // return true;
+  // }
+  // }
+  // }
+  // return false;
+
+  // }
+
+  // void dfs(int v) {
+  // visited[v] = true;
+  // for (Integer t : G.adj(v)) {
+  // if (visited[t] == false)
+  // dfs(t);
+  // }
+  // s.push(v);
+  // }
 
   private void synCtor(String synsets) {
 
@@ -110,7 +172,7 @@ public class WordNet {
 
     if (nounA == null || nounB == null)
       throw new IllegalArgumentException();
-    int temp = sap.ancestor(map.get(nounB), map.get(nounB));
+    int temp = sap.ancestor(map.get(nounA), map.get(nounB));
 
     StringBuilder last = new StringBuilder();
 
@@ -154,8 +216,8 @@ public class WordNet {
     // String s = "worm";
     // String s2 = "bird";
 
-    String s = "edible_fruit";
-    String s2 = "physical_entity";
+    String s = "white_marlin";
+    String s2 = "mileage";
     StdOut.println(w.distance(s, s2));
     StdOut.println(w.sap(s, s2));
 

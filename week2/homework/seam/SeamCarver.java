@@ -2,20 +2,31 @@ import java.awt.Color;
 
 import edu.princeton.cs.algs4.Picture;
 import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.EdgeWeightedDigraph;
+import edu.princeton.cs.algs4.AcyclicSP;
+import edu.princeton.cs.algs4.DirectedEdge;
 
 public class SeamCarver {
 
+  // private final Picture tempPic;
   private Picture pic;
   private int width;
   private int height;
-  private int[] arraySeam;
-  double[][] energies;
+  private double[][] energies;
 
   // create a seam carver object based on the given picture
   public SeamCarver(Picture picture) {
-    pic = picture;
+    if (picture == null)
+      throw new IllegalArgumentException();
+    // tempPic = picture;
+    pic = new Picture(picture);
     width = pic.width();
     height = pic.height();
+
+    updateEnergy();
+  }
+
+  private void updateEnergy() {
 
     energies = new double[height()][width()];
     for (int i = 0; i < height(); i++) {
@@ -27,7 +38,6 @@ public class SeamCarver {
       }
       // System.out.println();
     }
-
   }
 
   // current picture
@@ -37,16 +47,20 @@ public class SeamCarver {
 
   // // width of current picture
   public int width() {
-    return width;
+    return pic.width();
   }
 
   // // height of current picture
   public int height() {
-    return height;
+    return pic.height();
   }
 
   // // energy of pixel at column x and row y
   public double energy(int x, int y) {
+    if (validate(y, x)) {
+      throw new IllegalArgumentException();
+    }
+
     if (isBoarder(x, y))
       return 1000.0;
     return delta(x, y);
@@ -85,16 +99,15 @@ public class SeamCarver {
     } else {
       return c.getBlue();
     }
+
   }
 
   // // sequence of indices for horizontal seam
   public int[] findHorizontalSeam() {
-    arraySeam = new int[height];
     filp();
-    // System.out.println(width + " " + height);
-    findVerticalSeam();
+    int[] ret = findVerticalSeam();
     filp();
-    return arraySeam;
+    return ret;
   }
 
   private void filp() {
@@ -117,115 +130,197 @@ public class SeamCarver {
     // System.out.println(' ');
   }
 
-  private int count;
-
-  // // sequence of indices for vertical seam
+  // // sequence of indices for vertical seam #TODO
   public int[] findVerticalSeam() {
-    arraySeam = new int[height];
-    int[] minarraySeam = new int[height];
-    // double min = Double.MAX_VALUE;
-    // int start = 0;
-    // for (int i = 0; i < width; i++) {
-    // double energy = energies[1][i];
-    // if (energy < min) {
-    // start = i;
-    // min = energy;
-    // }
-    // }
+    EdgeWeightedDigraph graph = new EdgeWeightedDigraph(width * height + 2);
 
-    double minEnergy = Double.MAX_VALUE;
-    for (int i = 0; i < width; i++) {
-
-      count = 0;
-      sum = 0;
-      search(0, i);
-      if (sum < minEnergy) {
-        minEnergy = sum;
-        minarraySeam = arraySeam.clone();
+    for (int i = 0; i < height - 1; i++) {
+      for (int j = 0; j < width; j++) {
+        graph.addEdge(new DirectedEdge(to(i, j), to(i + 1, j), energies[i + 1][j]));
+        // System.out.println(to(i, j) + " -> " + to(i + 1, j) + " = " + energies[i +
+        // 1][j]);
+        if (j != 0) {
+          graph.addEdge(new DirectedEdge(to(i, j), to(i + 1, j - 1), energies[i + 1][j - 1]));
+          // System.out.println(to(i, j) + " -> " + to(i + 1, j - 1) + " = " + energies[i
+          // + 1][j - 1]);
+        }
+        if (j != width - 1) {
+          graph.addEdge(new DirectedEdge(to(i, j), to(i + 1, j + 1), energies[i + 1][j + 1]));
+          // System.out.println(to(i, j) + " -> " + to(i + 1, j + 1) + " = " + energies[i
+          // + 1][j + 1]);
+        }
+        // System.out.println(to(i, j) + " " + energies[i][j]);
       }
-      // System.out.println(sum);
     }
-    arraySeam = minarraySeam.clone();
-    return arraySeam;
+    for (int i = 0; i < width; i++) {
+      graph.addEdge(new DirectedEdge(0, to(0, i), energies[0][i]));
+      // System.out.println(0 + " -> " + to(0, i) + " = " + energies[0][i]);
+      graph.addEdge(new DirectedEdge(to(height - 1, i), height * width + 1, energies[height - 1][i]));
+      // System.out.println(to(height - 1, i) + " -> " + (height * width + 1) + " = "
+      // + energies[height - 1][i]);
+    }
+
+    AcyclicSP sp = new AcyclicSP(graph, 0);
+    int[] arr = new int[height];
+    int temp;
+    int count = 0;
+    for (DirectedEdge path : sp.pathTo(height * width + 1)) {
+      temp = (path.from() - 1) % width;
+      // System.out.print(temp + " ");
+      if (count >= 1 && count <= arr.length)
+        arr[count - 1] = temp;
+      count++;
+    }
+    if (height >= 2)
+      arr[0] = arr[1];
+    // System.out.println();
+
+    // for (int i : arr) {
+    // System.out.println(i);
+    // }
+
+    return arr;
   }
 
-  double sum;
-
-  private void search(int x, int y) {
-    sum += energies[x][y];
-    int temp;
-    temp = y;
-    arraySeam[count] = temp;
-    count++;
-    // System.out.print(y + " -> ");
-    int[] toi = { -1, 0, +1 };
-    int[] toj = { +1, +1, +1 };
-
-    double min = Double.MAX_VALUE;
-    int lastx = 0, lasty = 0;
-    for (int i = 0; i < toj.length; i++) {
-
-      int newX = x + toj[i];
-      int newY = y + toi[i];
-      if (!validate(newX, newY)) {
-        if (energies[newX][newY] <= min) {
-          min = energies[newX][newY];
-          lastx = newX;
-          lasty = newY;
-        }
-      }
-    }
-    if (energies[lastx][lasty] == 1000.0) {
-
-      sum += energies[lastx][lasty];
-      arraySeam[count] = lasty;
-      return;
-    }
-
-    search(lastx, lasty);
+  private int to(int i, int j) {
+    return ((i * width) + j) + 1;
   }
 
   private boolean validate(int x, int y) {
     return x < 0 || y < 0 || x >= height || y >= width;
   }
 
-  private void print() {
+  // private void print() {
 
-    for (int i = 0; i < height; i++) {
+  // for (int i = 0; i < height; i++) {
 
-      for (int j = 0; j < width; j++) {
+  // for (int j = 0; j < width; j++) {
 
-        StdOut.printf("%7.2f ", energies[i][j]);
-      }
-      System.out.println();
+  // StdOut.printf("%7.2f ", energies[i][j]);
+  // }
+  // System.out.println();
+  // }
+
+  // System.out.println();
+  // System.out.println();
+  // }
+
+  // remove horizontal seam from current picture
+  public void removeHorizontalSeam(int[] seam) {
+    if (height <= 1)
+
+      throw new IllegalArgumentException();
+    if (seam == null)
+      throw new IllegalArgumentException();
+    for (int i = 0; i < seam.length - 1; i++) {
+
+      if (Math.abs(seam[i] - seam[i + 1]) > 1 || seam[i] >= height || seam[i] < 0)
+        throw new IllegalArgumentException();
+
     }
 
-    System.out.println();
-    System.out.println();
+    Picture temp = new Picture(width, height - 1);
+    boolean shift = true;
+
+    for (int i = 0; i < width; i++) {
+      for (int j = 0; j < height - 1; j++) {
+
+        if (seam[i] == j)
+
+          shift = false;
+        if (!shift)
+          temp.set(i, j, pic.get(i, j + 1));
+        else
+          temp.set(i, j, pic.get(i, j));
+      }
+      shift = true;
+    }
+
+    pic = temp;
+    height--;
+    updateEnergy();
   }
 
-  // // remove horizontal seam from current picture
-  // public void removeHorizontalSeam(int[] seam)
-
   // // remove vertical seam from current picture
-  // public void removeVerticalSeam(int[] seam)
+  public void removeVerticalSeam(int[] seam) {
+
+    if (width <= 1)
+      throw new IllegalArgumentException();
+    if (seam == null)
+      throw new IllegalArgumentException();
+    for (int i = 0; i < seam.length - 1; i++) {
+      if (Math.abs(seam[i] - seam[i + 1]) > 1 || seam[i] >= width || seam[i] < 0)
+        throw new IllegalArgumentException();
+    }
+
+    Picture temp = new Picture(width() - 1, height);
+    boolean shift = true;
+
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width - 1; j++) {
+        if (seam[i] == j)
+          shift = false;
+        if (!shift)
+          temp.set(j, i, pic.get(j + 1, i));
+        else
+          temp.set(j, i, pic.get(j, i));
+
+      }
+
+      shift = true;
+    }
+
+    pic = temp;
+    width--;
+    updateEnergy();
+  }
 
   // unit testing (optional)
   public static void main(String[] args) {
-    Picture pic = new Picture("3x4.png");
+
+    Picture pic = new Picture(args[0]);
+    // Picture pic = new Picture("6x5.png");
     pic.show();
     System.out.println();
-    SeamCarver s = new SeamCarver(new Picture("12x10.png"));
+    // SeamCarver s = new SeamCarver(new Picture("6x5.png"));
+    SeamCarver s = new SeamCarver(pic);
     double eng = s.energy(1, 1);
     // System.out.println(eng);
-    System.out.println();
+    // System.out.println();
 
-    System.out.println(s.width + " " + s.height);
-    s.print();
-    // s.findHorizontalSeam();
+    // System.out.println(s.width + " " + s.height);
+    // for (int i : s.findHorizontalSeam())
 
-    s.findVerticalSeam();
-    System.out.println();
+    // System.out.print(i + "-> ");
+    // System.out.println();
+    // System.out.println("__________________________________");
+    // int[] arr = s.findVerticalSeam();
+    // for (int i = 0; i < arr.length; i++) {
+    // System.out.print(arr[i] + " ");
+    // }
+
+    // System.out.println();
+    // arr = s.findHorizontalSeam();
+    // for (int i = 0; i < arr.length; i++) {
+    // System.out.print(arr[i] + " ");
+    // }
+    // for (int i : s.findVerticalSeam())
+    // System.out.print(i + "-> ");
+
+    // s.print();
+    // s.findVerticalSeam();
+    // System.out.println();
+
+    for (int i = 0; i < 4; i++) {
+
+      int[] arr = s.findVerticalSeam();
+      for (int j = 0; j < arr.length; j++) {
+        System.out.print(arr[j] + " ");
+      }
+      System.out.println();
+      s.removeVerticalSeam(arr);
+      System.out.println(s.width() + " : " + s.height());
+    }
 
     // System.out.println(s.width);
     // System.out.println(s.height);
